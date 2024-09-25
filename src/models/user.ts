@@ -4,11 +4,13 @@ import MUUID from 'uuid-mongodb';
 import bcrypt from 'bcryptjs';
 
 
-interface IUser {
+export interface IUser {
     username: string;
     email: string;
     password: string;
     _id: string;
+    createdAt: Date,
+    updatedAt: Date
 }
 
 type UserModel = Model<IUser>;
@@ -46,7 +48,7 @@ const userSchema = new Schema<IUser, UserModel>({
         type: 'String',
         default: () => MUUID.v4().toString()
     }
-});
+}, { timestamps: true });
 
 // Pre-save middleware to hash the password
 userSchema.pre('save', async function (next: (err?: Error) => void) {
