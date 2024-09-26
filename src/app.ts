@@ -7,6 +7,8 @@ import cookieParser from 'cookie-parser';
 import injectRoutes from './routes/index';
 import redisClient from './utils/redis';
 import session from 'express-session';  
+import jwt from 'jsonwebtoken'; 
+import path from 'path';
 
 dotenv.config();
 dbClient();
@@ -23,8 +25,20 @@ app.use(cors({
     credentials: true
 }));
 
+// Serve static files from the 'public' folder inside 'src'
+const staticPath = path.join(__dirname, 'public');  // Adjusted path
+console.log(`Serving static files from: ${staticPath}`);
+app.use(express.static(staticPath));
+
 app.use('/api', injectRoutes());
 
+// Middleware to injest Socket.io into the request
+app.use((req, res, next) => {
+    req.io = app.get('io');
+    next();
+});
+
+// Session token
 (async () => {
    try {
         const redis = await redisClient();
@@ -47,6 +61,7 @@ app.use('/api', injectRoutes());
     } catch (err) {
         console.error('Failed to set up Redis session store:', err);
     }    
-})
+});
+
 
 module.exports = app;

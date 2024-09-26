@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { pollCreationSchema, voteSchema } from "../validation/pollValidation";
+import { paramsSchema, pollCreationSchema, voteSchema } from "../validation/pollValidation";
 
 export const validatePollCreation = (req: Request, res: Response, next: NextFunction) => {
   const { error } = pollCreationSchema.validate(req.body, { abortEarly: false});
@@ -22,11 +22,26 @@ export const validatePollCreation = (req: Request, res: Response, next: NextFunc
 };
 
 export const validateVote = (req: Request, res: Response, next: NextFunction) => {
-    const { error } = voteSchema.validate(req.body, { abortEarly: false});
+    // Validate request parameters
+    const { error: paramsError } = paramsSchema.validate(req.params);
+    if (paramsError) {
+        console.log(paramsError);
+        return res.status(400).json({ error: paramsError.details[0].message })
+    }
 
-    if (error) {
-        console.log(error);
-        return res.status(400).json({ error: error.details[0].message });
+    const { error: bodyError } = voteSchema.validate(req.body, { abortEarly: false});
+
+    if (bodyError) {
+        console.log(bodyError);
+        const errorDetails = bodyError.details.reduce((acc: Record<string, string>, detail) => {
+            const field = detail.path.join('.'); // Field name causing the error
+            acc[field] = detail.message; // Error message for the field
+            return acc;
+        }, {});
+        return res.status(400).json({
+            message: 'Validation error',
+            errors: errorDetails
+        });
     }
 
     next();

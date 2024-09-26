@@ -20,14 +20,18 @@ export const pollCreationSchema = Joi.object({
 });
 
 export const voteSchema = Joi.object({
-    pollId: Joi.string().required().messages({
-        'string.base': 'Poll ID should be a string',
-        'string.empty': 'Poll ID cannot be empty',
-        'any.required': 'Poll ID is required',
-    }),
     optionId: Joi.string().required().messages({
         'string.base': 'Option should be a string',
         'string.empty': 'Option ID is cannot be empty',
         'any.required': 'Option ID is required',
-    }),
+    })
+});
+
+export const paramsSchema = Joi.object({
+    pollId: Joi.string().uuid().required().messages({
+        'string.base': 'Poll ID should be a string',
+        'string.empty': 'Poll ID cannot be empty',
+        'string.guid': 'Poll ID should be a valid UUID',
+        'any.required': 'Poll ID is required',
+    })
 });

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Poll Results</title>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #results {
+      margin-top: 20px;
+    }
+    .option {
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Real-Time Poll Results</h1>
+
+  <!-- Input to connect to a specific poll -->
+  <div>
+    <label for="pollId">Enter Poll ID:</label>
+    <input type="text" id="pollId" placeholder="Enter the poll ID here" />
+    <button id="connectButton">Connect</button>
+  </div>
+
+  <!-- Display results here -->
+  <div id="results">
+    <h2>Results</h2>
+    <div id="optionsContainer"></div>
+  </div>
+
+  <script>
+    // Initialize the socket connection
+    const socket = io('http://localhost:5000'); // Adjust port to match your server's port
+    let pollId = "";
+
+    // Connect button click event
+    document.getElementById('connectButton').addEventListener('click', () => {
+      pollId = document.getElementById('pollId').value.trim();
+      
+      if (pollId) {
+        // Emit an event to subscribe to the poll's updates
+        socket.emit('subscribeToPoll', pollId);
+        console.log(`Subscribed to poll ${pollId}`);
+
+        // Fetch the initial results using HTTP GET
+        fetch(`http://localhost:5000/api/polls/${pollId}/results`) // Adjust API endpoint as necessary
+          .then(response => response.json())
+          .then(data => {
+            displayResults(data);
+          })
+          .catch(error => console.error('Error fetching poll results:', error));
+      }
+    });
+
+    // Listen for `pollUpdated` events from the server
+    socket.on('pollUpdated', (poll) => {
+      if (poll._id === pollId) {
+        console.log('Received updated poll data:', poll);
+        displayResults(poll);
+      }
+    });
+
+    // Function to display the poll results
+    function displayResults(poll) {
+      const optionsContainer = document.getElementById('optionsContainer');
+      optionsContainer.innerHTML = '';
+
+      poll.options.forEach(option => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'option';
+        optionDiv.textContent = `${option.option}: ${option.votes} vote(s)`;
+        optionsContainer.appendChild(optionDiv);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Poll } from '../models/poll';
 import { IUser } from '../models/user';
+import { paramsSchema } from '../validation/pollValidation';
 
 export const createPoll = async (req: Request, res: Response) => {
     try {
@@ -36,10 +37,12 @@ export const getActivePolls = async (req: Request, res: Response) => {
     }
 };
 
+
 export const voteOnPoll = async (req: Request, res: Response) => {
     try {
         const userId = req.userId;
-        const { pollId, optionId } = req.body;
+        const { pollId } = req.params;
+        const { optionId } = req.body;
 
         const poll = await Poll.findById(pollId);
 
@@ -61,10 +64,34 @@ export const voteOnPoll = async (req: Request, res: Response) => {
         poll.voters.push(userId);
         await poll.save();
 
-        // Broadcast
-
+        // Emit poll update to all connected clients via Socket.IO
+        const io = req.app.get('io');
+        io.to(pollId).emit('pollUpdated', poll); // Emit the updated poll to all connected clients
+        
         res.status(200).json({ message: 'Vote submitted successfully' });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+export const getPollResults = async (req: Request, res: Response) => {
+    const { pollId } = req.params;
+
+    const { error } = paramsSchema.validate({ pollId });
+    if (error) {
+        return res.status(400).json({ message: error.details[0].message });
+    }
+
+    try {
+        const poll = await Poll.findById(pollId);
+
+        if (!poll) {
+            return res.status(404).json({ message: 'Poll not found' });
+        }
+
+        res.status(200).json({ poll });
+
+    } catch (error: any) {
+        res.status(500).json({ message: error.message })
     }
 };
