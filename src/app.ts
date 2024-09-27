@@ -7,7 +7,6 @@ import cookieParser from 'cookie-parser';
 import injectRoutes from './routes/index';
 import redisClient from './utils/redis';
 import session from 'express-session';  
-import jwt from 'jsonwebtoken'; 
 import path from 'path';
 
 dotenv.config();
@@ -64,4 +63,4 @@ app.use((req, res, next) => {
 });
 
 
-module.exports = app;
+export default app;
